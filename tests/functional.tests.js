@@ -23,4 +23,4 @@ assert.equal(add6(1), 7);
 assert.equal(add6(10), 16);
 assert.equal(add6(100), 106);
 
-console.log('functional tests passed');
+console.log('*** functional tests passed ***');
