@@ -2,14 +2,31 @@
 
 
 //dependencies
-const axios     = require('axios'),
-      guid      = require('guid'),
-      fibonacci = require('./lib/fibonacci'),
-      compose   = require('./lib/functional.js').compose,
-      assert    = require('chai').assert,
-      pipe      = require('./lib/functional.js').pipe;
+const guid       = require('guid'),
+      encrypthor = require('./lib/encrypthor'),
+      vowels     = require('./lib/vowels'),
+      axios      = require('axios').create({
+  baseURL: 'http://internal-devchallenge-2-dev.apphb.com/',
+  timeout: 10000,
+  headers: {'Accept': 'application/json'}
+});
 
-const baseUrl = 'http://internal-devchallenge-2-dev.apphb.com/';
-let url       = `${baseUrl}/values/${guid.raw()}`;
+const currentGuid = guid.raw();
 
-console.log('this is chuck testa');
+let urlGet        = `values/${currentGuid}`;
+let urlTest       = `encoded/${currentGuid}`;
+
+axios.get(urlGet).then( response => {
+
+	let encoded = encrypthor.encode(response.data.words, response.data.algorithm, response.data.startingFibonacciNumber);
+
+	if(response.data.algorithm == 'IronMan' ||  response.data.algorithm == 'TheIncredibleHulk'){
+		axios.get( `${urlTest}/${response.data.algorithm}`).then(testResponse => {
+			if(testResponse.data.encoded == encoded)
+				console.log('SUCCESS');
+			else
+				console.log('FAILURE');
+		});
+	}
+	console.log('Checkpoint:', response.data.algorithm)
+});
