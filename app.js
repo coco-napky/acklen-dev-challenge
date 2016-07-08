@@ -1,32 +1,35 @@
 "use strict";
 
-
 //dependencies
 const guid       = require('guid'),
       encrypthor = require('./lib/encrypthor'),
-      vowels     = require('./lib/vowels'),
       axios      = require('axios').create({
-  baseURL: 'http://internal-devchallenge-2-dev.apphb.com/',
-  timeout: 10000,
-  headers: {'Accept': 'application/json'}
-});
+          baseURL: 'http://internal-devchallenge-2-dev.apphb.com/',
+          timeout: 10000,
+          headers: {'Accept': 'application/json'}
+      });
 
-const currentGuid = guid.raw();
 
-let urlGet        = `values/${currentGuid}`;
-let urlTest       = `encoded/${currentGuid}`;
+let index    = 0;
+let requests = [];
+let interval = setInterval( () =>{
 
-axios.get(urlGet).then( response => {
+    if(requests.length >= 20){
+        requests.map( request => {
+            const urlTest  = `encoded/${request.guid}`;
 
-	let encoded = encrypthor.encode(response.data.words, response.data.algorithm, response.data.startingFibonacciNumber);
-
-	if(response.data.algorithm == 'IronMan' ||  response.data.algorithm == 'TheIncredibleHulk'){
-		axios.get( `${urlTest}/${response.data.algorithm}`).then(testResponse => {
-			if(testResponse.data.encoded == encoded)
-				console.log('SUCCESS');
-			else
-				console.log('FAILURE');
-		});
-	}
-	console.log('Checkpoint:', response.data.algorithm)
-});
+            request.promise.then( response =>
+                axios.get( `${urlTest}/${response.data.algorithm}`).then( testResponse => {
+                    let encoded = encrypthor.encode(response.data.words, response.data.algorithm, response.data.startingFibonacciNumber);
+                    return {result: encoded, encoded: testResponse.data.encoded, algorithm: response.data.algorithm};
+                })
+            ).then( value => console.log(++index, value.algorithm, value.result == value.encoded));
+        });
+        clearInterval(interval);
+    }else{
+        const currentGuid = guid.raw();
+        const urlGet      = `values/${currentGuid}`;
+        requests.push({promise : axios.get(urlGet), guid: currentGuid});
+        console.log('request : ', requests.length);
+    }
+}, 200);
